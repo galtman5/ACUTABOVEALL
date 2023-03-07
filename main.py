@@ -1,5 +1,4 @@
 import os.path
-
 from google.auth.transport.requests import Request
 import base64
 from googleapiclient.discovery import build
