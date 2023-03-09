@@ -83,15 +83,16 @@ def get_invoice_pdf_list():
                     for page in range(1):
                         text += pdf_reader.pages[page].extract_text()
                     #new = text.split('\n')
-                    #extract_data_from_pdf(text)
+                    # print(text)
+                    # print()
+                    extract_data_from_pdf(text)
+                    
+            #         if ctr == 6:
+            #             break
 
-                    print(text)
-                    print('-' * 100)
+            # if ctr == 6:
+            #     break
 
-                    if ctr == 5:
-                        break
-            if ctr == 5:
-                    break
     except HttpError as error:
         print(f'An error occurred: {error}')
 
@@ -128,13 +129,22 @@ def extract_invoice_due_date(invoice):
     except AttributeError:
         print(invoice)
 
+def extract_gas_quantity(invoice):
+    pattern = r"(?<!\.)\b\d+\.\d{4}\b(?!\.)"
+    try:
+        invoice_amnt_due = re.search(pattern, invoice).group(0)
+        return invoice_amnt_due
+    except AttributeError:
+        print('no gas quantity found, check pdf. Possible that gas is not included in invoice.')
+
 
 def extract_data_from_pdf(pdf):
     invoice_id = extract_invoice_id(pdf)
     invoice_datetime = extract_invoice_datetime(pdf)
     invoice_amnt_due = extract_invoice_amount_due(pdf)
     invoice_due_date = extract_invoice_due_date(pdf)
-    print(invoice_due_date)
+    gas_quantity = extract_gas_quantity(pdf)
+    print(gas_quantity, invoice_datetime)
 
 
 if __name__ == '__main__':
