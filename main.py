@@ -1,16 +1,19 @@
-import os.path
 from google.auth.transport.requests import Request
-import base64
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
+from prefect.filesystems import GCS
+from io import BytesIO
+import base64
 import pprint as pp
 import pytz
 import datetime
 import base64
-from io import BytesIO
+import os.path
 import PyPDF2
+import re
+
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
@@ -51,17 +54,10 @@ def get_invoice_pdf_list():
 
         print(f"Number of messages sent from djoy@portconsolidated.com: {len(messages)}")
 
-        for message in messages:
+        for ctr, message in enumerate(messages):
             # Get the message by ID
             message = service.users().messages().get(userId='me', id=message['id']).execute()
-            timestamp = int(message['internalDate']) / 1000.0
-            email_datetime_recieved = datetime.datetime.fromtimestamp(timestamp)
             
-            # Set EST timezone
-            est_tz = pytz.timezone('US/Eastern')
-
-            # Convert datetime object to EST timezone
-            est_datetime = email_datetime_recieved.astimezone(est_tz)
             #pp.pprint(est_datetime)
             #print(est_datetime.strftime("%Y-%m-%d %H:%M:%S"))
 
@@ -70,9 +66,10 @@ def get_invoice_pdf_list():
 
             # Get the payload of the message (including the headers and body)
             payload = message['payload']
-
             # Iterate over the parts of the payload (which could include email body and/or attachments)
             for part in message['payload']['parts']:
+                #pp.pprint(part)
+                
                 if part['filename'] and part['filename'].endswith('.pdf'):
                     data = part['body'].get('data')
                     if not data:
@@ -85,14 +82,77 @@ def get_invoice_pdf_list():
                     text = ''
                     for page in range(1):
                         text += pdf_reader.pages[page].extract_text()
-                    new = text.split('\n')
-                    print(new[8])
-                    #break
-            #break in place so that loop only executes once
-            #break
-                        
+                    #new = text.split('\n')
+                    #extract_data_from_pdf(text)
+
+                    print(text)
+                    print('-' * 100)
+
+                    if ctr == 5:
+                        break
+            if ctr == 5:
+                    break
     except HttpError as error:
         print(f'An error occurred: {error}')
 
+def extract_invoice_id(invoice):
+    pattern = r"(?i)(?<=Invoice Number[:;]\s)[A-Z0-9]+"
+    try:
+        invoice_id = re.search(pattern, invoice).group(0)
+        return invoice_id
+    except AttributeError:
+        print(invoice)
+
+def extract_invoice_datetime(invoice):
+    pattern = r"(?i)(?<=Invoice Date[:;]\s)\d{2}/\d{2}/\d{2}"
+    try:
+        invoice_datetime = re.search(pattern, invoice).group(0)
+        return invoice_datetime
+    except AttributeError:
+        print(invoice)
+
+def extract_invoice_amount_due(invoice):
+    pattern = r"(?i)(?:Ampunt|Amount)\s*Due[;:]\s*\$\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)"
+    try:
+        invoice_amnt_due = re.search(pattern, invoice).group(1)
+        invoice_amnt_due = invoice_amnt_due.replace(',', '')
+        return float(invoice_amnt_due)
+    except AttributeError:
+        print(invoice)
+
+def extract_invoice_due_date(invoice):
+    pattern = r"(?<=Due Date[:;] )\d{2}\/\d{2}\/\d{2}"
+    try:
+        invoice_amnt_due = re.search(pattern, invoice).group(0)
+        return invoice_amnt_due
+    except AttributeError:
+        print(invoice)
+
+
+def extract_data_from_pdf(pdf):
+    invoice_id = extract_invoice_id(pdf)
+    invoice_datetime = extract_invoice_datetime(pdf)
+    invoice_amnt_due = extract_invoice_amount_due(pdf)
+    invoice_due_date = extract_invoice_due_date(pdf)
+    print(invoice_due_date)
+
+
 if __name__ == '__main__':
     get_invoice_pdf_list()
+
+
+# import json
+# import fsspec
+
+# # create a GCSFileSystem object with authentication using the `project` parameter
+# gcs = fsspec.filesystem('gcs', project='My First Project', token='browser')
+
+# # specify the path to the JSON file in GCS
+# path = 'gs://creds/token.json'
+
+# # open the file using GCSFileSystem
+# with gcs.open(path, 'r') as f:
+#     # read the JSON content
+#     json_content = json.load(f)
+#     pp.pprint(json_content)
+
