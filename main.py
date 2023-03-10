@@ -4,6 +4,8 @@ from googleapiclient.errors import HttpError
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from io import BytesIO
+from prefect.blocks.system import Secret
+from snowflake.connector.pandas_tools import write_pandas
 import base64
 import pprint as pp
 import base64
@@ -12,7 +14,7 @@ import PyPDF2
 import re
 import pandas as pd
 import snowflake.connector
-from snowflake.connector.pandas_tools import write_pandas
+
 
 
 # If modifying these scopes, delete the file token.json.
@@ -87,18 +89,21 @@ def write_to_snowflake(json_payload):
 
     df = pd.DataFrame(json_payload)
 
-    # Define connection parameters
-    SNOWFLAKE_ACCOUNT = 'MAB87887.us-east-1'
+    SNOWFLAKE_PASSWORD = Secret.load("snowflake-pw").get()
+    SNOWFLAKE_ACCOUNT = Secret.load("snowflake-account-identifier")
     SNOWFLAKE_USER = 'GALTMAN5'
-    SNOWFLAKE_PASSWORD = 'G091198a'
 
-    conn = snowflake.connector.connect(
+    with snowflake.connector.connect(
                 account=SNOWFLAKE_ACCOUNT,
                 user=SNOWFLAKE_USER,
                 password=SNOWFLAKE_PASSWORD
-            )
+            ) as conn:
     
-    res,t,x,c = write_pandas(conn, df, 'GAS_METRICS', 'ACUTABOVEALL', 'PUBLIC')
+        res,t,x,c = write_pandas(conn, 
+                             df=df, 
+                             table='GAS_METRICS', 
+                             database='ACUTABOVEALL',
+                             schema='PUBLIC')
 
     print(res)
 
