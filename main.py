@@ -57,19 +57,12 @@ def get_invoice_pdf_list():
         for ctr, message in enumerate(messages):
             # Get the message by ID
             message = service.users().messages().get(userId='me', id=message['id']).execute()
-            
-            #pp.pprint(est_datetime)
-            #print(est_datetime.strftime("%Y-%m-%d %H:%M:%S"))
 
-            # pp.pprint(message)
-            # pp.pprint(dir(message))
-
-            # Get the payload of the message (including the headers and body)
+            # Get the payload of the message (the headers and body)
             payload = message['payload']
+
             # Iterate over the parts of the payload (which could include email body and/or attachments)
-            for part in message['payload']['parts']:
-                #pp.pprint(part)
-                
+            for part in message['payload']['parts']:                
                 if part['filename'] and part['filename'].endswith('.pdf'):
                     data = part['body'].get('data')
                     if not data:
@@ -134,7 +127,6 @@ def extract_invoice_amount_due(invoice):
         return float(invoice_amnt_due)
     except AttributeError:
         return None
-
 
 def extract_invoice_due_date(invoice):
     pattern = r"(?<=Due Date[:;] )\d{2}\/\d{2}\/\d{2}"
