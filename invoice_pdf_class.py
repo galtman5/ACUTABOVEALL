@@ -1,30 +1,18 @@
 import re
 from pprint import pformat
+from datetime import datetime
 
 class InvoicePdf:
-    def __init__(self, pdf_text):
-        self.data = self.extract_data_from_pdf(pdf_text)
-    
-    def __repr__(self) -> str:
-        return pformat(self.__dict__)
-
-    def extract_data_from_pdf(self, pdf):
+    def __init__(self, pdf):
         self.extract_invoice_id(pdf)
         self.extract_invoice_datetime(pdf)
         self.extract_invoice_amount_due(pdf)
         self.extract_invoice_due_date(pdf)
         self.extract_gas_quantity(pdf)
         self.extract_driver(pdf)
-        #self.extract_unit_price(pdf)
-
-        return {
-            'INVOICE_ID': [self.invoice_id],
-            'INVOICE_DATE': [self.invoice_datetime],
-            'INVOICE_GAS_QUANTITY': [self.gas_quantity],
-            'INVOICE_AMOUNT_DUE': [self.invoice_amnt_due],
-            'INVOICE_DUE_DATE': [self.invoice_due_date],
-            'DRIVER': [self.driver]
-            }
+    
+    def __repr__(self) -> str:
+        return pformat(self.__dict__)
 
     def extract_invoice_id(self, invoice_text):
         """
@@ -68,8 +56,10 @@ class InvoicePdf:
 
         pattern = r"(?i)(?<=Invoice Date[:;]\s)\d{2}/\d{2}/\d{2}"
         try:
-            self.invoice_datetime = re.search(pattern, invoice_text).group(0)
+            date_string = re.search(pattern, invoice_text).group(0)
+            self.invoice_datetime = datetime.strptime(date_string, '%m/%d/%y').date()
         except AttributeError:
+            print(invoice_text)
             self.invoice_datetime = None
 
     def extract_invoice_amount_due(self, invoice_text):
@@ -114,10 +104,10 @@ class InvoicePdf:
             Sets self.invoice_due_date = '03/31/22'
         """
 
-
         pattern = r"(?<=Due Date[:;] )\d{2}\/\d{2}\/\d{2}"
         try:
-            self.invoice_due_date = re.search(pattern, invoice_text).group(0)
+            date_string = re.search(pattern, invoice_text).group(0)
+            self.invoice_due_date = datetime.strptime(date_string, "%m/%d/%y").date()
         except AttributeError:
             self.invoice_due_date = None
 
