@@ -13,7 +13,7 @@ def main_flow():
 
     if recent_email_invoice.invoice_datetime > recent_snowflake_invoice:
         logger.info("New email has arrived!")
-        logger.info("write this bitch to snowflake")
+        logger.info("write this to snowflake")
     else:
         logger.info("No new emails have arrived.")
 
