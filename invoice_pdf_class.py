@@ -1,9 +1,12 @@
 import re
 from pprint import pformat
 from datetime import datetime
+from prefect.blocks.system import Secret
 
 class InvoicePdf:
-    def __init__(self, pdf):
+    def __init__(self, pdf, email_id):
+        email_acc = Secret.load("email-user").get()
+        self.email_url = f'https://mail.google.com/mail/{email_acc}/#inbox/{email_id}'
         self.extract_invoice_id(pdf)
         self.extract_invoice_datetime(pdf)
         self.extract_invoice_amount_due(pdf)
@@ -34,9 +37,9 @@ class InvoicePdf:
         pattern = r"(?i)(?<=Invoice Number[:;]\s)[A-Z0-9]+"
         try:
             temp = re.search(pattern, invoice_text).group(0)
-            self.INVOICE_ID = [temp]
+            self.invoice_id = [temp]
         except AttributeError:
-            self.INVOICE_ID = [None]
+            self.invoice_id = [None]
 
     def extract_invoice_datetime(self, invoice_text):
         """
@@ -58,10 +61,10 @@ class InvoicePdf:
         pattern = r"(?i)(?<=Invoice Date[:;]\s)\d{2}/\d{2}/\d{2}"
         try:
             date_string = re.search(pattern, invoice_text).group(0)
-            self.INVOICE_DATE = [datetime.strptime(date_string, '%m/%d/%y').date()]
+            self.invoice_date = [datetime.strptime(date_string, '%m/%d/%y').date()]
         except AttributeError:
             print(invoice_text)
-            self.INVOICE_DATE = [None]
+            self.invoice_date = [None]
 
     def extract_invoice_amount_due(self, invoice_text):
         """
@@ -84,9 +87,9 @@ class InvoicePdf:
         try:
             invoice_amnt_due = re.search(pattern, invoice_text).group(1)
             invoice_amnt_due = invoice_amnt_due.replace(',', '')
-            self.INVOICE_AMOUNT_DUE = [float(invoice_amnt_due)]
+            self.invoice_amount_due = [float(invoice_amnt_due)]
         except AttributeError:
-            self.INVOICE_AMOUNT_DUE = [None]
+            self.invoice_amount_due = [None]
 
     def extract_invoice_due_date(self, invoice_text):
 
@@ -108,9 +111,9 @@ class InvoicePdf:
         pattern = r"(?<=Due Date[:;] )\d{2}\/\d{2}\/\d{2}"
         try:
             date_string = re.search(pattern, invoice_text).group(0)
-            self.INVOICE_DUE_DATE = [datetime.strptime(date_string, "%m/%d/%y").date()]
+            self.invoice_due_date = [datetime.strptime(date_string, "%m/%d/%y").date()]
         except AttributeError:
-            self.INVOICE_DUE_DATE = [None]
+            self.invoice_due_date = [None]
 
     def extract_gas_quantity(self, invoice_text):
         """
@@ -132,9 +135,9 @@ class InvoicePdf:
         pattern = r"(?<!\.)\b\d+\.\d{4}\b(?!\.)"
         try:
             temp = re.search(pattern, invoice_text).group(0)
-            self.INVOICE_GAS_QUANTITY = [float(temp)]
+            self.invoice_gas_quantity = [float(temp)]
         except AttributeError:
-            self.INVOICE_GAS_QUANTITY = [None]
+            self.invoice_gas_quantity = [None]
 
     def extract_driver(self, invoice_text):
         """
@@ -156,14 +159,14 @@ class InvoicePdf:
         pattern = r"Driver[:;]? (\w+\s+\w+)"
         try:
             temp = re.search(pattern, invoice_text).group(1)
-            self.DRIVER = [temp]
+            self.driver = [temp]
         except AttributeError:
-            self.DRIVER = [None]
+            self.driver = [None]
 
     # experimental
     def extract_unit_price(self, invoice_text):
         pattern = r"(?<!\.)\b\d+\.\d{4}\b\s*\$(\d{1,3}(,\d{3})*(\.\d+)?)\b"
         try:
-            self.invoice_amnt_due = re.search(pattern, invoice_text).group(1)
+            self.unit_pp = re.search(pattern, invoice_text).group(1)
         except AttributeError:
-            self.invoice_amnt_due = invoice_text
+            self.unit_pp = invoice_text

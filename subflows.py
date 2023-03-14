@@ -93,7 +93,6 @@ def get_most_recent_inv_from_email():
                 # invoice is only on the first page of the pdf email attachment
                 page_text = pdf_reader.pages[0].extract_text()
 
-                return InvoicePdf(page_text)
+                return InvoicePdf(page_text, message['id'])
     except HttpError as error:
         print(f'An error occurred: {error}')
-
