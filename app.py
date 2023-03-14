@@ -11,20 +11,19 @@ with connect_to_snowflake() as conn:
 
 st.markdown('<span style="color:#7fc97f">Amount Due</span>', unsafe_allow_html=True)
 st.markdown('<span style="color:#fdc086">Gas Quantity</span>', unsafe_allow_html=True)
-colors = ['#7fc97f','#fdc086']
 
 # Create a line chart for the "Amount Due" line
-line1 = alt.Chart(df).mark_line(color=colors[0]).encode(
+line1 = alt.Chart(df).mark_line(color='#7fc97f').encode(
     x='INVOICE_DATE',
     y='INVOICE_AMOUNT_DUE',
-    color=alt.Color(scale=alt.Scale(range=[colors[0]]))
+    color=alt.Color(scale=alt.Scale(range=['#7fc97f']))
 )
 
 # Create a line chart for the "Gas Quantity" line
-line2 = alt.Chart(df).mark_line(color=colors[1]).encode(
+line2 = alt.Chart(df).mark_line(color='#fdc086').encode(
     x='INVOICE_DATE',
     y='INVOICE_GAS_QUANTITY',
-    color=alt.Color(scale=alt.Scale(range=[colors[1]]))
+    color=alt.Color(scale=alt.Scale(range=['#fdc086']))
 )
 
 # Combine the two line charts into a single chart
