@@ -4,30 +4,16 @@ from googleapiclient.errors import HttpError
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from io import BytesIO
-from prefect.blocks.system import Secret
 from prefect import task
-from snowflake.connector.pandas_tools import write_pandas
 from invoice_pdf_class import InvoicePdf
+from helpers import connect_to_snowflake
 from rich.traceback import install
 install()
-import base64
-import pprint as pp
+
 import base64
 import os.path
 import PyPDF2
 import pandas as pd
-import snowflake.connector
-
-def connect_to_snowflake():
-    SNOWFLAKE_PASSWORD = Secret.load("snowflake-pw").get()
-    SNOWFLAKE_ACCOUNT = Secret.load("snowflake-account-identifier").get()
-    SNOWFLAKE_USER = 'GALTMAN5'
-
-    return snowflake.connector.connect(
-                account=SNOWFLAKE_ACCOUNT,
-                user=SNOWFLAKE_USER,
-                password=SNOWFLAKE_PASSWORD
-            )
 
 @task
 def get_most_recent_inv_date_from_snowflake():
@@ -110,3 +96,4 @@ def get_most_recent_inv_from_email():
                 return InvoicePdf(page_text)
     except HttpError as error:
         print(f'An error occurred: {error}')
+

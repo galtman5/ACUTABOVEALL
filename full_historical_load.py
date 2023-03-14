@@ -4,7 +4,6 @@ from googleapiclient.errors import HttpError
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from io import BytesIO
-from snowflake.connector.pandas_tools import write_pandas
 from invoice_pdf_class import InvoicePdf
 import base64
 import pprint as pp
@@ -12,7 +11,6 @@ import base64
 import os.path
 import PyPDF2
 import pandas as pd
-from subflows import connect_to_snowflake
 
 
 
@@ -84,17 +82,7 @@ def get_invoice_pdf_list():
     except HttpError as error:
         print(f'An error occurred: {error}')
 
-def write_to_snowflake(json_payload):
-    df = pd.DataFrame.from_dict(vars(json_payload))
 
-    with connect_to_snowflake() as conn:
-        res,t,x,c = write_pandas(conn, 
-                             df=df, 
-                             table_name='GAS_METRICS', 
-                             database='ACUTABOVEALL',
-                             schema='PUBLIC')
-
-    return res
 
 
 
