@@ -4,8 +4,6 @@ from googleapiclient.errors import HttpError
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from io import BytesIO
-from prefect.blocks.system import Secret
-from snowflake.connector.pandas_tools import write_pandas
 from invoice_pdf_class import InvoicePdf
 import base64
 import pprint as pp
@@ -13,7 +11,6 @@ import base64
 import os.path
 import PyPDF2
 import pandas as pd
-import snowflake.connector
 
 
 
@@ -53,9 +50,7 @@ def get_invoice_pdf_list():
         if not messages:
             print('No messages found.')
             return
-
-        print(f"Number of messages sent from djoy@portconsolidated.com: {len(messages)}")
-
+        
         for ctr, message in enumerate(messages):
             # Get the message by ID
             message = service.users().messages().get(userId='me', id=message['id']).execute()
@@ -80,35 +75,14 @@ def get_invoice_pdf_list():
                     # invoice is only on the first page of the pdf email attachment
                     page_text = pdf_reader.pages[0].extract_text()
                     invoice_pdf = InvoicePdf(page_text)
-                    print(invoice_pdf)
+                    query_res = write_to_snowflake(invoice_pdf)
 
-                    # backfill has already happened. Need to implement the checker flow now.
-                    #write_to_snowflake(invoice_data_payload)
+                    print(query_res, ctr)
 
     except HttpError as error:
         print(f'An error occurred: {error}')
 
-def write_to_snowflake(json_payload):
 
-    df = pd.DataFrame(json_payload)
-
-    SNOWFLAKE_PASSWORD = Secret.load("snowflake-pw").get()
-    SNOWFLAKE_ACCOUNT = Secret.load("snowflake-account-identifier")
-    SNOWFLAKE_USER = 'GALTMAN5'
-
-    with snowflake.connector.connect(
-                account=SNOWFLAKE_ACCOUNT,
-                user=SNOWFLAKE_USER,
-                password=SNOWFLAKE_PASSWORD
-            ) as conn:
-    
-        res,t,x,c = write_pandas(conn, 
-                             df=df, 
-                             table='GAS_METRICS', 
-                             database='ACUTABOVEALL',
-                             schema='PUBLIC')
-
-    print(res)
 
 
 
