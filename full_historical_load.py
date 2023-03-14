@@ -4,7 +4,6 @@ from googleapiclient.errors import HttpError
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from io import BytesIO
-from prefect.blocks.system import Secret
 from snowflake.connector.pandas_tools import write_pandas
 from invoice_pdf_class import InvoicePdf
 import base64
@@ -13,7 +12,7 @@ import base64
 import os.path
 import PyPDF2
 import pandas as pd
-import snowflake.connector
+from subflows import connect_to_snowflake
 
 
 
@@ -53,18 +52,15 @@ def get_invoice_pdf_list():
         if not messages:
             print('No messages found.')
             return
-
-        print(f"Number of messages sent from djoy@portconsolidated.com: {len(messages)}")
-
+        
         for ctr, message in enumerate(messages):
-            print(ctr)
             # Get the message by ID
             message = service.users().messages().get(userId='me', id=message['id']).execute()
 
             # Get the payload of the message (the headers and body)
             payload = message['payload']
 
-            # Iterate over the parts of the payload (which include email body and/or attachments)
+            # Iterate over the parts of the payload (which could include email body and/or attachments)
             for part in message['payload']['parts']:                
                 if part['filename'] and part['filename'].endswith('.pdf'):
                     data = part['body'].get('data')
@@ -81,34 +77,24 @@ def get_invoice_pdf_list():
                     # invoice is only on the first page of the pdf email attachment
                     page_text = pdf_reader.pages[0].extract_text()
                     invoice_pdf = InvoicePdf(page_text)
+                    query_res = write_to_snowflake(invoice_pdf)
 
-                    # backfill has already happened. Need to implement the checker flow now.
-                    write_to_snowflake(invoice_pdf)
+                    print(query_res, ctr)
 
     except HttpError as error:
         print(f'An error occurred: {error}')
 
-def write_to_snowflake(invoice_pdf):
-    df = pd.DataFrame(invoice_pdf.data)
+def write_to_snowflake(json_payload):
+    df = pd.DataFrame.from_dict(vars(json_payload))
 
-
-    SNOWFLAKE_PASSWORD = Secret.load("snowflake-pw").get()
-    SNOWFLAKE_ACCOUNT = Secret.load("snowflake-account-identifier").get()
-    SNOWFLAKE_USER = 'GALTMAN5'
-
-    with snowflake.connector.connect(
-                account=SNOWFLAKE_ACCOUNT,
-                user=SNOWFLAKE_USER,
-                password=SNOWFLAKE_PASSWORD
-            ) as conn:
-    
+    with connect_to_snowflake() as conn:
         res,t,x,c = write_pandas(conn, 
                              df=df, 
                              table_name='GAS_METRICS', 
                              database='ACUTABOVEALL',
                              schema='PUBLIC')
 
-    print(res)
+    return res
 
 
 

@@ -8,6 +8,8 @@ from prefect.blocks.system import Secret
 from prefect import task
 from snowflake.connector.pandas_tools import write_pandas
 from invoice_pdf_class import InvoicePdf
+from rich.traceback import install
+install()
 import base64
 import pprint as pp
 import base64
@@ -16,23 +18,25 @@ import PyPDF2
 import pandas as pd
 import snowflake.connector
 
+def connect_to_snowflake():
+    SNOWFLAKE_PASSWORD = Secret.load("snowflake-pw").get()
+    SNOWFLAKE_ACCOUNT = Secret.load("snowflake-account-identifier").get()
+    SNOWFLAKE_USER = 'GALTMAN5'
+
+    return snowflake.connector.connect(
+                account=SNOWFLAKE_ACCOUNT,
+                user=SNOWFLAKE_USER,
+                password=SNOWFLAKE_PASSWORD
+            )
+
 @task
 def get_most_recent_inv_date_from_snowflake():
     query = ''' SELECT INVOICE_DATE
                 FROM ACUTABOVEALL.PUBLIC.GAS_METRICS
                 ORDER BY INVOICE_DATE DESC
                 LIMIT 1;'''
-    
-    SNOWFLAKE_PASSWORD = Secret.load("snowflake-pw").get()
-    SNOWFLAKE_ACCOUNT = Secret.load("snowflake-account-identifier").get()
-    SNOWFLAKE_USER = 'GALTMAN5'
 
-    with snowflake.connector.connect(
-                account=SNOWFLAKE_ACCOUNT,
-                user=SNOWFLAKE_USER,
-                password=SNOWFLAKE_PASSWORD
-            ) as conn:
-        
+    with connect_to_snowflake() as conn:
         cur = conn.cursor()
         cur.execute(query)
 
@@ -54,18 +58,18 @@ def get_most_recent_inv_from_email():
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
     # time.
-    if os.path.exists('token.json'):
-        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+    if os.path.exists('creds/token.json'):
+        creds = Credentials.from_authorized_user_file('creds/token.json', SCOPES)
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
             flow = InstalledAppFlow.from_client_secrets_file(
-                'credentials.json', SCOPES)
+                'creds/credentials.json', SCOPES)
             creds = flow.run_local_server(port=0)
         # Save the credentials for the next run
-        with open('token.json', 'w') as token:
+        with open('creds/token.json', 'w') as token:
             token.write(creds.to_json())
 
     try:

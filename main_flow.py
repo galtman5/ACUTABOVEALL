@@ -9,9 +9,9 @@ def main_flow():
     recent_email_invoice = get_most_recent_inv_from_email()
 
     logger.warning(f'snowflake: {recent_snowflake_invoice}')
-    logger.warning(f'gmail: {recent_email_invoice.invoice_datetime}')
+    logger.warning(f'gmail: {recent_email_invoice.INVOICE_DATE[0]}')
 
-    if recent_email_invoice.invoice_datetime > recent_snowflake_invoice:
+    if recent_email_invoice.INVOICE_DATE[0] > recent_snowflake_invoice:
         logger.info("New email has arrived!")
         logger.info("write this to snowflake")
     else:
