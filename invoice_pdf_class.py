@@ -87,9 +87,9 @@ class InvoicePdf:
         try:
             invoice_amnt_due = re.search(pattern, invoice_text).group(1)
             invoice_amnt_due = invoice_amnt_due.replace(',', '')
-            self.invoice_amount_due = [float(invoice_amnt_due)]
+            self.amount_due = [float(invoice_amnt_due)]
         except AttributeError:
-            self.invoice_amount_due = [None]
+            self.amount_due = [None]
 
     def extract_invoice_due_date(self, invoice_text):
 
@@ -111,9 +111,9 @@ class InvoicePdf:
         pattern = r"(?<=Due Date[:;] )\d{2}\/\d{2}\/\d{2}"
         try:
             date_string = re.search(pattern, invoice_text).group(0)
-            self.invoice_due_date = [datetime.strptime(date_string, "%m/%d/%y").date()]
+            self.due_date = [datetime.strptime(date_string, "%m/%d/%y").date()]
         except AttributeError:
-            self.invoice_due_date = [None]
+            self.due_date = [None]
 
     def extract_gas_quantity(self, invoice_text):
         """
@@ -126,18 +126,19 @@ class InvoicePdf:
             None
 
         Example:
-            >>> invoice_text = "...Gas Quantity: 1234.5678..."
+            >>> invoice_text = "...Gas Quantity: 1234.5000..."
             >>> extract_gas_quantity(invoice_text)
             Sets self.gas_quantity = '1234.5678'
         """
 
-
-        pattern = r"(?<!\.)\b\d+\.\d{4}\b(?!\.)"
+        #TODO: capture multiple gas quantities per invoice - fix tonight
+        pattern = r"(?<=[a-zA-Z])\d+\.\d{4}\b|(?<![\.\w])\d+\.\d{4}\b(?!\.)"
         try:
-            temp = re.search(pattern, invoice_text).group(0)
-            self.invoice_gas_quantity = [float(temp)]
+            inv_quantities = re.findall(pattern, invoice_text)
+            total_gas_quantity = sum([float(x) for x in inv_quantities if float(x) != 1.0000])
+            self.gas_quantity = [total_gas_quantity]
         except AttributeError:
-            self.invoice_gas_quantity = [None]
+            self.gas_quantity = [None]
 
     def extract_driver(self, invoice_text):
         """

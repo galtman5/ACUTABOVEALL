@@ -3,8 +3,9 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
+from prefect.blocks.system import Secret
 from io import BytesIO
-from invoice_pdf_class import InvoicePdf
+from inv_pdf_class import InvoicePdf
 from helpers import write_to_snowflake
 import base64
 import pprint as pp
@@ -76,17 +77,19 @@ def get_invoice_pdf_list():
                     # invoice is only on the first page of the pdf email attachment
                     page_text = pdf_reader.pages[0].extract_text()
                     invoice_pdf = InvoicePdf(page_text, message['id'])
-                    query_res = write_to_snowflake(invoice_pdf)
+                    # query_res = write_to_snowflake(invoice_pdf)
+                    # print(query_res, ctr)
+                    print(invoice_pdf)
+                    if ctr == 10:
+                        break
 
-                    print(query_res, ctr)
+                    # if invoice_pdf.invoice_id[0] == 'R03211748':
+                    #     print(page_text)
+            if ctr==10:
+                break
 
     except HttpError as error:
         print(f'An error occurred: {error}')
-
-
-
-
-
 
 
 if __name__ == '__main__':

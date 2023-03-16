@@ -15,14 +15,14 @@ st.markdown('<span style="color:#fdc086">Gas Quantity</span>', unsafe_allow_html
 # Create a line chart for the "Amount Due" line
 line1 = alt.Chart(df).mark_line(color='#7fc97f').encode(
     x='INVOICE_DATE',
-    y='INVOICE_AMOUNT_DUE',
+    y='AMOUNT_DUE',
     color=alt.Color(scale=alt.Scale(range=['#7fc97f']))
 )
 
 # Create a line chart for the "Gas Quantity" line
 line2 = alt.Chart(df).mark_line(color='#fdc086').encode(
     x='INVOICE_DATE',
-    y='INVOICE_GAS_QUANTITY',
+    y='GAS_QUANTITY',
     color=alt.Color(scale=alt.Scale(range=['#fdc086']))
 )
 
