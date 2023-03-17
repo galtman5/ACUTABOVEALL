@@ -4,11 +4,16 @@ from helpers import connect_to_snowflake
 import altair as alt
 
 
-st.title('A Cut Above All - Gas Metrics')
+query = '''
+        SELECT INVOICE_DATE, GAS_QUANTITY, AMOUNT_DUE
+        FROM ACUTABOVEALL.PUBLIC.GAS_METRICS
+        WHERE AMOUNT_DUE != 873.83;
+        '''
 
 with connect_to_snowflake() as conn:
-    df = pd.read_sql('SELECT * FROM ACUTABOVEALL.PUBLIC.GAS_METRICS', conn)
+    df = pd.read_sql(query, conn)
 
+st.title('A Cut Above All - Gas Metrics')
 st.markdown('<span style="color:#7fc97f">Amount Due</span>', unsafe_allow_html=True)
 st.markdown('<span style="color:#fdc086">Gas Quantity</span>', unsafe_allow_html=True)
 
