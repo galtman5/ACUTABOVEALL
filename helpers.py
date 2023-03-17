@@ -6,9 +6,9 @@ import pandas as pd
 
 
 def connect_to_snowflake():
+    SNOWFLAKE_USER = 'GALTMAN5'
     SNOWFLAKE_PASSWORD = Secret.load("snowflake-pw").get()
     SNOWFLAKE_ACCOUNT = Secret.load("snowflake-account-identifier").get()
-    SNOWFLAKE_USER = 'GALTMAN5'
 
     return snowflake.connector.connect(
                 account=SNOWFLAKE_ACCOUNT,
